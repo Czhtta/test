@@ -1,0 +1,36 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 定义第一个服务：PostgreSQL数据库
+  postgres:
+    image: postgres:13  # 使用PostgreSQL 13版本镜像
+    container_name: comp5348-postgres # 容器名
+    environment:
+      POSTGRES_USER: comp5348        # 设置数据库用户名
+      POSTGRES_PASSWORD: tut03gp04   # 设置数据库密码
+      POSTGRES_DB: store_db          # 创建名为store_db的数据库
+    ports:
+      - "5432:5432"                  # 将5432端口映射到容器的5432端口
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # 将数据库数据持久化，防止容器关闭后数据丢失
+
+
+  # 定义第二个服务：RabbitMQ消息队列
+  rabbitmq:
+    image: rabbitmq:3-management  # 使用带管理界面的RabbitMQ 3版本镜像
+    container_name: comp5348-rabbitmq # 容器名
+    ports:
+      - "5672:5672"       # 应用程序连接RabbitMQ的端口
+      - "15672:15672"     # 通过浏览器访问管理界面的端口
+    environment:
+      RABBITMQ_DEFAULT_USER: comp5348     # 设置RabbitMQ的用户名
+      RABBITMQ_DEFAULT_PASS: tut03gp04    # 设置RabbitMQ的密码
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq   # 将RabbitMQ数据持久化
+
+
+volumes:
+  postgres_data:
+
+  rabbitmq_data:
