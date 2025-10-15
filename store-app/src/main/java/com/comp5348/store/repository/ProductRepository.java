@@ -1,4 +1,10 @@
 package com.comp5348.store.repository;
 
-public class ProductRepository {
+
+import com.comp5348.store.entity.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+
 }
