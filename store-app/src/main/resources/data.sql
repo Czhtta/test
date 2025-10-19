@@ -1,14 +1,18 @@
 -- 清空旧数据 (可选, 方便每次重启都有干净的数据)
-DELETE FROM stocks;
-DELETE FROM products;
-DELETE FROM warehouses;
+-- 注意：必须按照外键依赖关系的逆序删除
+DELETE FROM order_items;  -- 先删除有外键依赖的子表
+DELETE FROM orders;       -- 再删除订单表
+DELETE FROM stocks;       -- 删除库存表
+DELETE FROM products;     -- 删除商品表
+DELETE FROM warehouses;   -- 删除仓库表
+DELETE FROM users;        -- 删除用户表
 
 -- 插入商品 (Products)
 -- 我们创建三种商品: 笔记本电脑, 键盘, 鼠标
-INSERT INTO products (id, name, description, price) VALUES
-                                                       (1, 'Laptop', 'High-performance laptop', 1500.00),
-                                                       (2, 'Keyboard', 'Ergonomic mechanical keyboard', 120.00),
-                                                       (3, 'Mouse', 'Wireless gaming mouse', 80.00);
+INSERT INTO products (id, name, description, price, active, created_at, updated_at) VALUES
+                                                       (1, 'Laptop', 'High-performance laptop', 1500.00, true, NOW(), NOW()),
+                                                       (2, 'Keyboard', 'Ergonomic mechanical keyboard', 120.00, true, NOW(), NOW()),
+                                                       (3, 'Mouse', 'Wireless gaming mouse', 80.00, true, NOW(), NOW());
 
 -- 插入仓库 (Warehouses)
 -- 我们创建两个仓库: 悉尼仓库和墨尔本仓库
