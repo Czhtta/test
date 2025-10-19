@@ -1,6 +1,5 @@
 package com.comp5348.store.security;
 
-import com.comp5348.store.security.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -23,7 +23,7 @@ public class UserService {
     /**
      * 用于认证用户
      * @param username 用户名
-     * @param password 原始密码 (如 "COMP5348")
+     * @param password 原始密码
      * @return 如果认证成功，返回true，否则false
      */
     public boolean authenticate(String username, String password) {
