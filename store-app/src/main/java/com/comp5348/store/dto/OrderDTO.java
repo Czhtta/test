@@ -15,7 +15,16 @@ public class OrderDTO {
     private LocalDateTime orderDate;
     private OrderStatus orderStatus;
     private BigDecimal totalPrice;
+    private List<OrderWarehouseAllocationDTO> warehouseAllocations;
     private List<OrderItemDTO> orderItems;
+    
+    @Data
+    public static class OrderWarehouseAllocationDTO {
+        private Long id;
+        private Long warehouseId;
+        private String warehouseName;
+        private Integer allocatedQuantity;
+    }
     
     @Data
     public static class OrderItemDTO {

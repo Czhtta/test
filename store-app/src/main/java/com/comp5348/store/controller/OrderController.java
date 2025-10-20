@@ -29,6 +29,8 @@ public class OrderController {
             OrderDTO order = orderService.createOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(order);
         } catch (Exception e) {
+            System.err.println("Error creating order: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
