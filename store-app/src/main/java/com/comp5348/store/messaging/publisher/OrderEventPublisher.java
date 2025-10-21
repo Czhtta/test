@@ -9,7 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 /**
- * 消息生产者，负责将业务事件（如发送邮件、请求配送）作为消息发送到 RabbitMQ。
+ * 生产者
  * 使用 RabbitTemplate 来简化消息的发送，将 Java 对象（DTO）自动转换为 JSON 格式，
  * 并通过指定的交换机（Exchange）和路由键（Routing Key）进行路由
  */

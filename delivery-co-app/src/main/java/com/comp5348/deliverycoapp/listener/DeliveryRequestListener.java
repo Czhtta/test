@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * 消费者，监听并处理 store-app 的发货请求。
- * 收到发货请求后，它不会自己执行耗时的模拟任务，而是将任务委托给
+ * 收到发货请求后，不会自己执行耗时的模拟任务，而是委托给
  * 异步的 SimulationService
- * 从而避免阻塞 RabbitMQ 的监听线程
+ * 避免阻塞 RabbitMQ 的监听线程
  */
 @Component
 public class DeliveryRequestListener {

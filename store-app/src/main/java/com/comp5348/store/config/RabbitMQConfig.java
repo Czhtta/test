@@ -10,11 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 /**
  * 负责声明所有 store-app 需要交互的交换机、队列和绑定。
- * 注意因为这时候bank的通信还没写，所以后续如果你们写的话可能需要用我这个框架参照了。
- * 同时作为生产者和消费者
- * 生产者: 声明了需要将消息发送到的目标队列（如 email, delivery 请求队列）
- * 消费者: 声明了自身需要监听的队列（如 delivery status 更新队列）
- * 并创建了相应的绑定规则。
+ * 注意因为这时候bank的通信还没写，所以后续如果写的话可能需要用我这个框架参照了。
  */
 @Configuration
 public class RabbitMQConfig {

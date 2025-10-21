@@ -13,10 +13,10 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 /**
- * 与store里的一样：
- * 作为消费者，声明了自身需要监听的发货请求队列 (q.delivery.request)
- * 作为生产者，也声明了需要发送消息到的状态更新队列
- * 绑定 q.delivery.status.update，确保消息总是有处可投。
+ * 同时作为
+ * 消费者，声明自身需要监听的发货请求队列 (q.delivery.request)
+ * 生产者，也声明了需要发送消息到的状态更新队列
+ * 绑定 q.delivery.status.update，确保消息总是有处可投，与store中配置作用一样
  */
 @Configuration
 public class RabbitMQConfig {
@@ -47,7 +47,7 @@ public class RabbitMQConfig {
     public Binding bindingDeliveryStatusUpdateQueue(Queue deliveryStatusUpdateQueue, TopicExchange exchange) {
         return BindingBuilder.bind(deliveryStatusUpdateQueue).to(exchange).with(ROUTING_KEY_DELIVERY_STATUS_UPDATE);
     }
-
+//    先注释掉，跑不通会用这个。
 //    @Bean
 //    MessageListenerAdapter listenerAdapter(DeliveryRequestListener receiver, MessageConverter messageConverter) {
 //        MessageListenerAdapter adapter = new MessageListenerAdapter(receiver, "handleDeliveryRequest");

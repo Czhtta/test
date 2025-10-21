@@ -15,25 +15,23 @@ public class RabbitMQConfig {
 
     public static final String QUEUE_EMAIL_REQUEST = "q.email.request";
     /**
-     * 用于接收邮件发送请求的队列.
+     * 接收邮件发送请求的队列.
      * 这个Bean会确保在RabbitMQ服务器上存在一个名为 "q.email.request" 的持久化队列.
-     * @return 队列Bean.
      */
     @Bean
     public Queue emailRequestQueue() {
         return new Queue(QUEUE_EMAIL_REQUEST);
     }
     /**
-     * 消息转换器, 用于将Java对象序列化为JSON格式, 以及反序列化.
-     * 确保所有微服务都使用同一种转换器, 以实现互操作性.
-     * @return Jackson2的JSON消息转换器Bean.
+     * 消息转换器, 将Java对象序列化为JSON格式, 以及反序列化.
+     * 确保所有微服务都使用同一种转换器
      */
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
-
+//    先注释掉，跑不通再用
 //    @Bean
 //    MessageListenerAdapter listenerAdapter(EmailRequestListener receiver, MessageConverter messageConverter) {
 //        MessageListenerAdapter adapter = new MessageListenerAdapter(receiver,
