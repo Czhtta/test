@@ -1,9 +1,12 @@
 package com.comp5348.store.controller;
 
+import com.comp5348.dto.DeliveryRequest;
+import com.comp5348.dto.EmailRequest;
 import com.comp5348.store.entity.User;
 import com.comp5348.store.entity.Warehouse;
 import com.comp5348.store.entity.Stock;
 import com.comp5348.store.entity.Product;
+import com.comp5348.store.messaging.publisher.OrderEventPublisher;
 import com.comp5348.store.repository.UserRepository;
 import com.comp5348.store.repository.WarehouseRepository;
 import com.comp5348.store.repository.StockRepository;
@@ -18,6 +21,8 @@ import java.util.Map;
 @RequestMapping("/api/test")
 @CrossOrigin(origins = "*")
 public class TestController {
+    @Autowired
+    private OrderEventPublisher orderEventPublisher;
 
     @Autowired
     private UserRepository userRepository;
@@ -81,5 +86,26 @@ public class TestController {
     @GetMapping("/stocks")
     public Object getAllStocks() {
         return stockRepository.findAll();
+    }
+
+    @GetMapping("/send-test-email")
+    public Map<String, String> sendTestEmail(){
+        EmailRequest testEmail = new EmailRequest();
+        testEmail.setTo("test@example.com");
+        testEmail.setSubject("Hello World!");
+        testEmail.setBody("This is a test message!");
+
+        orderEventPublisher.sendEmailRequest(testEmail);
+
+        return Map.of("status", "Test email message sent!");
+    }
+    @GetMapping("/send-test-delivery")
+    public Map<String,String> sendTestDelivery(){
+        DeliveryRequest testDelivery = new DeliveryRequest();
+        testDelivery.setOrderId(999L);
+        testDelivery.setCustomerAddress("123 Fake Street, Sydney, Australia");
+        testDelivery.setWarehouseAllocations(Map.of(101L, 5, 102L, 2));
+        orderEventPublisher.sendDeliveryRequest(testDelivery);
+        return Map.of("status", "Test delivery message sent!");
     }
 }
