@@ -1,3 +1,5 @@
+package com.comp5348.dto;
+
 import lombok.Data;
 
 import java.io.Serializable;
@@ -12,7 +14,7 @@ public class PaymentRequest implements Serializable {
 //    @Data已经生成了这些方法，相当于加了@Getter @Setter ToString
 //    @Override
 //    public String toString() {
-//        return "PaymentRequest{" +
+//        return "com.comp5348.dto.PaymentRequest{" +
 //                "orderId=" + orderId +
 //                ", amount=" + amount +
 //                '}';
