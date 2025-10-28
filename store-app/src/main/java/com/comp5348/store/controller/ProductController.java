@@ -2,6 +2,7 @@ package com.comp5348.store.controller;
 
 import com.comp5348.store.dto.ProductDTO;
 import com.comp5348.store.service.ProductService;
+import com.comp5348.store.service.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final StockService stockService;
 
     /**
      * Create product
@@ -85,6 +87,16 @@ public class ProductController {
         log.info("REST request to get products by category: {}", category);
         List<ProductDTO> products = productService.getProductsByCategory(category);
         return ResponseEntity.ok(products);
+    }
+
+    /**
+     * Get total stock for a product
+     * GET /api/products/{id}/stock
+     */
+    @GetMapping("/{id}/stock")
+    public ResponseEntity<Integer> getProductTotalStock(@PathVariable Long id) {
+        int total = stockService.getTotalStockByProductId(id);
+        return ResponseEntity.ok(total);
     }
 
     /**

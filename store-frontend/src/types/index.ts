@@ -20,9 +20,14 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  stock: number;
   imageUrl?: string;
   isActive: boolean;
+}
+
+export interface stock {
+  productId: number;
+  quantity: number;
+  warehouseId: number;
 }
 
 // Order types
@@ -43,7 +48,8 @@ export interface OrderItem {
 
 export interface CreateOrderRequest {
   userId: number;
-  items: OrderItem[];
+  productId: number;
+  quantity: number;
   shippingAddress: string;
   paymentMethod: string;
 }

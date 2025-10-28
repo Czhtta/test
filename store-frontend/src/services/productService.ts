@@ -31,5 +31,10 @@ export const productService = {
     const response = await api.get(`/products/${id}/exists`);
     return response.data;
   },
+  
+  getProductTotalStock: async (id: number): Promise<number> => {
+    const response = await api.get(`/products/${id}/stock`);
+    return response.data;
+  },
 };
 
