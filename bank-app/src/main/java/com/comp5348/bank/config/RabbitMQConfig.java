@@ -19,6 +19,8 @@ public class RabbitMQConfig {
 
     public static final String QUEUE_PAYMENT_STATUS = "q.payment.status";
     public static final String ROUTING_KEY_PAYMENT_STATUS = "payment.status";
+    public static final String ROUTING_KEY_PAYMENT_RESPONSE = "payment.response";
+    public static final String ROUTING_KEY_REFUND_RESPONSE = "refund.response";
 
     @Bean
     public MessageConverter jsonMessageConverter() {

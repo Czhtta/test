@@ -15,6 +15,8 @@ import com.comp5348.store.repository.WarehouseRepository;
 import com.comp5348.store.service.OrderService;
 import com.comp5348.store.service.StockService;
 import com.comp5348.store.service.WarehouseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ import java.util.HashMap;
 @Service
 @Transactional
 public class OrderServiceImpl implements OrderService {
+    public static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     @Autowired
     private OrderRepository orderRepository;
