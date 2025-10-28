@@ -2,6 +2,8 @@ package com.comp5348.store.messaging.publisher;
 
 import com.comp5348.dto.DeliveryRequest;
 import com.comp5348.dto.EmailRequest;
+import com.comp5348.dto.PaymentRequest;
+import com.comp5348.dto.RefundRequest;
 import com.comp5348.store.config.RabbitMQConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,22 @@ public class OrderEventPublisher {
                 RabbitMQConfig.EXCHANGE_NAME,
                 RabbitMQConfig.ROUTING_KEY_DELIVERY,
                 deliveryRequest
+        );
+    }
+    public void sendPaymentRequest(PaymentRequest paymentRequest){
+        log.info("Sending Payment request for order ID: {}",paymentRequest.getOrderId());
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE_NAME,
+                RabbitMQConfig.ROUTING_KEY_PAYMENT_REQUEST,
+                paymentRequest
+        );
+    }
+    public void sendRefundRequest(RefundRequest refundRequest){
+        log.info("Sending Refund request for order ID: {}",refundRequest.getOrderId());
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE_NAME,
+                RabbitMQConfig.ROUTING_KEY_REFUND_REQUEST,
+                refundRequest
         );
     }
 }

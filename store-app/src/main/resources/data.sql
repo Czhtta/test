@@ -35,8 +35,9 @@ INSERT INTO stocks (id, product_id, warehouse_id, quantity) VALUES
 
 -- 插入用户 (Users)
 INSERT INTO users (id, username, password) VALUES
-                                              (1, 'admin', 'password'),
-                                              (2, 'user', 'password');
+                                              (1, 'admin', 'password','ROLE_ADMIN','1 Admin Road, Sydney'),
+                                              (2, 'user', 'password','ROLE_USER','100 User Ave, Melbourne'),
+                                              (3, 'customer', '...COMP5348_hashed...', 'ROLE_USER','500 Demo St, Sydney');
 
 -- 重置自增序列到当前最大ID，避免后续插入时主键冲突
 SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE((SELECT MAX(id) FROM products), 1), true);

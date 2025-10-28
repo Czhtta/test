@@ -18,13 +18,23 @@ public class RabbitMQConfig {
 
     public static final String QUEUE_EMAIL_REQUEST = "q.email.request";
     public static final String QUEUE_DELIVERY_REQUEST = "q.delivery.request";
-    //public static final String QUEUE_PAYMENT_REQUEST = "q.payment.request";
+    public static final String QUEUE_DELIVERY_STATUS_UPDATE = "q.delivery.status.update";
 
     public static final String ROUTING_KEY_EMAIL = "email.request";
     public static final String ROUTING_KEY_DELIVERY = "delivery.request";
-    //public static final String ROUTING_KEY_PAYMENT_REQUEST = "payment.request";
-    public static final String QUEUE_DELIVERY_STATUS_UPDATE = "q.delivery.status.update";
     public static final String ROUTING_KEY_DELIVERY_STATUS_UPDATE = "delivery.status.update";
+
+    public static final String QUEUE_PAYMENT_REQUEST = "q.payment.request";
+    public static final String ROUTING_KEY_PAYMENT_REQUEST = "payment.request";
+
+    public static final String QUEUE_PAYMENT_RESPONSE = "q.payment.response";
+    public static final String ROUTING_KEY_PAYMENT_RESPONSE = "payment.response";
+
+    public static final String QUEUE_REFUND_REQUEST = "q.refund.request";
+    public static final String ROUTING_KEY_REFUND_REQUEST = "refund.request";
+    public static final String QUEUE_REFUND_RESPONSE = "q.refund.response";
+    public static final String ROUTING_KEY_REFUND_RESPONSE = "refund.response";
+
 
     @Bean
     public MessageConverter jsonMessageConverter() {
@@ -34,7 +44,8 @@ public class RabbitMQConfig {
     public TopicExchange exchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
-    // 确保即使消费者应用后启动，消息也不会丢失
+
+
     @Bean
     public Queue emailRequestQueue() {
         return new Queue(QUEUE_EMAIL_REQUEST);
@@ -43,7 +54,6 @@ public class RabbitMQConfig {
     public Binding bindingEmailRequestQueue(Queue emailRequestQueue, TopicExchange exchange) {
         return BindingBuilder.bind(emailRequestQueue).to(exchange).with(ROUTING_KEY_EMAIL);
     }
-    // 确保即使消费者应用后启动，消息也不会丢失
     @Bean
     public Queue deliveryRequestQueue() {
         return new Queue(QUEUE_DELIVERY_REQUEST);
@@ -59,5 +69,29 @@ public class RabbitMQConfig {
     @Bean
     public Binding bindingDeliveryStatusUpdateQueue(Queue deliveryStatusUpdateQueue, TopicExchange exchange) {
         return BindingBuilder.bind(deliveryStatusUpdateQueue).to(exchange).with(ROUTING_KEY_DELIVERY_STATUS_UPDATE);
+    }
+    @Bean
+    public Queue paymentRequestQueue(){ return new Queue(QUEUE_PAYMENT_REQUEST);}
+    @Bean
+    public Binding bindingPaymentRequestQueue(Queue paymentRequestQueue, TopicExchange exchange){
+        return BindingBuilder.bind(paymentRequestQueue).to(exchange).with(ROUTING_KEY_PAYMENT_REQUEST);
+    }
+    @Bean
+    public Queue paymentResponseQueue() { return new Queue(QUEUE_PAYMENT_RESPONSE);}
+    @Bean
+    public Binding bindingPaymentResponseQueue(Queue paymentResponseQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(paymentResponseQueue).to(exchange).with(ROUTING_KEY_PAYMENT_RESPONSE);
+    }
+    @Bean
+    public Queue refundRequestQueue() { return new Queue(QUEUE_REFUND_REQUEST); }
+    @Bean
+    public Binding bindingRefundRequestQueue(Queue refundRequestQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(refundRequestQueue).to(exchange).with(ROUTING_KEY_REFUND_REQUEST);
+    }
+    @Bean
+    public Queue refundResponseQueue() { return new Queue(QUEUE_REFUND_RESPONSE); }
+    @Bean
+    public Binding bindingRefundResponseQueue(Queue refundResponseQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(refundResponseQueue).to(exchange).with(ROUTING_KEY_REFUND_RESPONSE);
     }
 }

@@ -1,9 +1,13 @@
 package com.comp5348.store.service.impl;
 
+import com.comp5348.dto.EmailRequest;
+import com.comp5348.dto.PaymentRequest;
+import com.comp5348.dto.RefundRequest;
 import com.comp5348.store.dto.CreateOrderRequest;
 import com.comp5348.store.dto.OrderDTO;
 import com.comp5348.store.entity.*;
 import com.comp5348.store.exception.ProductNotFoundException;
+import com.comp5348.store.messaging.publisher.OrderEventPublisher;
 import com.comp5348.store.repository.OrderRepository;
 import com.comp5348.store.repository.ProductRepository;
 import com.comp5348.store.repository.UserRepository;
@@ -21,6 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.HashMap;
+
 
 @Service
 @Transactional
@@ -44,31 +49,34 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private WarehouseRepository warehouseRepository;
 
+    @Autowired
+    private OrderEventPublisher orderEventPublisher;
+
     @Override
     public OrderDTO createOrder(CreateOrderRequest request) {
-        // 1. Check if user exists
+        //  Check if user exists
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. Check if product exists and get product information
+        //  Check if product exists and get product information
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + request.getProductId()));
-        
+
         if (!product.getActive()) {
             throw new RuntimeException("Product is not active: " + product.getName());
         }
-        
-        // 3. Check stock and allocate warehouse
+
+        // Check stock and allocate warehouse
         Map<Long, Integer> warehouseAllocation = warehouseService.findWarehousesForOrder(product.getId(), request.getQuantity());
 
-        // 4. Create order
+        // Create order
         Order order = new Order();
         order.setUser(user);
         order.setOrderStatus(OrderStatus.PENDING);
         order.setWarehouseAllocations(new ArrayList<>());
         order.setOrderItems(new ArrayList<>());
 
-        // 5. Create order items and calculate total price
+        // Create order items and calculate total price
         BigDecimal totalPrice = BigDecimal.ZERO;
         OrderItem orderItemEntity = new OrderItem();
         orderItemEntity.setOrder(order);
@@ -79,11 +87,11 @@ public class OrderServiceImpl implements OrderService {
         totalPrice = totalPrice.add(subtotal);
 
         order.setTotalPrice(totalPrice);
-        
+
         // Add order item to order
         order.getOrderItems().add(orderItemEntity);
 
-        // 6. Create warehouse allocations
+        // Create warehouse allocations
         for (Map.Entry<Long, Integer> allocation : warehouseAllocation.entrySet()) {
             OrderWarehouseAllocation warehouseAllocationEntity = new OrderWarehouseAllocation();
             warehouseAllocationEntity.setOrder(order);
@@ -94,14 +102,14 @@ public class OrderServiceImpl implements OrderService {
             order.getWarehouseAllocations().add(warehouseAllocationEntity);
         }
 
-        // 7. Save order
         Order savedOrder = orderRepository.save(order);
 
-        // 7. Decrease stock - temporarily skipped, simplified for testing
-        // TODO: after implementing Bank app, this method will be called to decrease stock in specific warehouses based on warehouseAllocation
-        stockService.decreaseStock(warehouseAllocation, product.getId());
+        PaymentRequest paymentRequest = new PaymentRequest();
+        paymentRequest.setOrderId(savedOrder.getId());
+        paymentRequest.setAmount(savedOrder.getTotalPrice());
 
-        // 8. Convert to DTO and return
+        orderEventPublisher.sendPaymentRequest(paymentRequest);
+
         return convertToDTO(savedOrder);
     }
 
@@ -144,10 +152,10 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         order.setOrderStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
-        
+
         return convertToDTO(savedOrder);
     }
 
@@ -155,25 +163,59 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
-        if (order.getOrderStatus() == OrderStatus.DELIVERED || 
-            order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new RuntimeException("Order status does not allow cancellation");
+
+        OrderStatus currentStatus = order.getOrderStatus();
+
+        if (currentStatus == OrderStatus.SHIPPED ||
+            currentStatus == OrderStatus.IN_TRANSIT ||
+            currentStatus == OrderStatus.DELIVERED ||
+            currentStatus == OrderStatus.CANCELLED ||
+            currentStatus == OrderStatus.REFUNDED) {
+
+            throw new RuntimeException("Cannot cancel order in status: " + currentStatus);
         }
-        
+
         order.setOrderStatus(OrderStatus.CANCELLED);
-        
-        // Restore stock to specific warehouses
-        for (OrderWarehouseAllocation allocation : order.getWarehouseAllocations()) {
-            Map<Long, Integer> stockToRestore = new HashMap<>();
-            stockToRestore.put(allocation.getWarehouse().getId(), allocation.getAllocatedQuantity());
-            stockService.increaseStock(stockToRestore, allocation.getProduct().getId());
+
+        boolean needsRefund = false;
+        boolean needsStockRestore = false;
+
+        if(currentStatus == OrderStatus.PAYMENT_SUCCESS || currentStatus == OrderStatus.AWAITING_SHIPMENT) {
+            needsRefund = true;
+            needsStockRestore = true;
+        } else if (currentStatus == OrderStatus.PENDING) {
+
         }
-        
+
+        if(needsStockRestore){
+            log.info("Restoring stock for cancelled order ID [{}]", orderId);
+            Map<Long, Integer> stockToRestore = order.getWarehouseAllocations().stream()
+                    .collect(Collectors.toMap(
+                            allocation -> allocation.getWarehouse().getId(),
+                            OrderWarehouseAllocation::getAllocatedQuantity
+                    ));
+            Long productId = order.getOrderItems().get(0).getProduct().getId();
+            stockService.increaseStock(stockToRestore, productId);
+        }
+
+        if(needsRefund){
+            log.info("Sending refund request for cancelled order ID [{}]", orderId);
+            RefundRequest refundRequest = new RefundRequest();
+            refundRequest.setOrderId(order.getId());
+            refundRequest.setAmount(order.getTotalPrice());
+            orderEventPublisher.sendRefundRequest(refundRequest);
+        }
+
+        EmailRequest email = new EmailRequest();
+        email.setTo(order.getUser().getUsername() + "@example.com");
+        email.setSubject("Order Cancelled: " + order.getId());
+        email.setBody("Your order with ID " + order.getId() + " has been cancelled."
+                        + (needsRefund ? " A refund will be processed shortly." : ""));
+        orderEventPublisher.sendEmailRequest(email);
         Order savedOrder = orderRepository.save(order);
         return convertToDTO(savedOrder);
     }
-    
+
 
     /**
      * Convert Order entity to OrderDTO
