@@ -9,6 +9,8 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 消费者，监听并处理 store-app 的发货请求。
  * 收到发货请求后，不会自己执行耗时的模拟任务，而是委托给
@@ -25,6 +27,7 @@ public class DeliveryRequestListener {
     @RabbitListener(queues = RabbitMQConfig.QUEUE_DELIVERY_REQUEST)
     public void handleDeliveryRequest(DeliveryRequest deliveryRequest) {
         log.info(">>>>> Received Delivery request for order ID: {}", deliveryRequest.getOrderId());
+
         simulationService.simulateDelivery(deliveryRequest);
     }
 }

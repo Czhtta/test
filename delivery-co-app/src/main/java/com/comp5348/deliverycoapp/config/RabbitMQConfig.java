@@ -27,6 +27,9 @@ public class RabbitMQConfig {
     public static final String QUEUE_DELIVERY_STATUS_UPDATE = "q.delivery.status.update";
     public static final String ROUTING_KEY_DELIVERY_STATUS_UPDATE = "delivery.status.update";
 
+    public static final String QUEUE_DELIVERY_CANCELLATION = "q.delivery.cancellation";
+    public static final String ROUTING_KEY_DELIVERY_CANCELLATION = "delivery.cancellation";
+
     @Bean
     public TopicExchange exchange() {
         return new TopicExchange(EXCHANGE_NAME);
@@ -46,6 +49,12 @@ public class RabbitMQConfig {
     @Bean
     public Binding bindingDeliveryStatusUpdateQueue(Queue deliveryStatusUpdateQueue, TopicExchange exchange) {
         return BindingBuilder.bind(deliveryStatusUpdateQueue).to(exchange).with(ROUTING_KEY_DELIVERY_STATUS_UPDATE);
+    }
+    @Bean
+    public Queue deliveryCancellationQueue() { return new Queue(QUEUE_DELIVERY_CANCELLATION); }
+    @Bean
+    public Binding bindingDeliveryCancellationQueue(Queue deliveryCancellationQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(deliveryCancellationQueue).to(exchange).with(ROUTING_KEY_DELIVERY_CANCELLATION);
     }
 //    先注释掉，跑不通会用这个。
 //    @Bean

@@ -1,42 +1,43 @@
 -- 清空旧数据 (可选, 方便每次重启都有干净的数据)
 -- 注意：必须按照外键依赖关系的逆序删除
-DELETE FROM order_warehouse_allocation;  -- 先删除订单仓库分配表
-DELETE FROM order_items;  -- 再删除订单项表
-DELETE FROM orders;       -- 然后删除订单表
-DELETE FROM stocks;       -- 删除库存表
-DELETE FROM products;     -- 删除商品表
-DELETE FROM warehouses;   -- 删除仓库表
-DELETE FROM users;        -- 删除用户表
+DELETE FROM order_warehouse_allocation;
+DELETE FROM order_items;
+DELETE FROM orders;
+DELETE FROM stocks;
+DELETE FROM products;
+DELETE FROM warehouses;
+-- DELETE FROM users;        -- 删除用户表
 
 -- 插入商品 (Products)
+
 INSERT INTO products (id, name, description, price, active, created_at, updated_at, image_url,category) VALUES
                                                        (1, 'Laptop', 'High-performance laptop', 1500.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/laptop.jpg', 'Electronics'),
                                                        (2, 'Keyboard', 'Ergonomic mechanical keyboard', 120.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/keyboard.jpg', 'Electronics'),
                                                        (3, 'Mouse', 'Wireless gaming mouse', 80.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/mouse.jpg', 'Electronics'),
                                                        (4, 'Monitor', '24-inch full HD monitor', 200.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/monitor.jpg', 'Electronics');
+ON CONFLICT (id) DO NOTHING;
 
 -- 插入仓库 (Warehouses)
--- 我们创建两个仓库: 悉尼仓库和墨尔本仓库
 INSERT INTO warehouses (id, name, location) VALUES
                                                (101, 'Sydney Warehouse', 'Sydney, NSW'),
-                                               (102, 'Melbourne Warehouse', 'Melbourne, VIC');
+                                               (102, 'Melbourne Warehouse', 'Melbourne, VIC')
+ON CONFLICT (id) DO NOTHING;
 
 -- 插入库存信息 (Stock)
--- 这是最关键的一步，它定义了哪个仓库有多少件什么商品
--- 悉尼仓库的库存
 INSERT INTO stocks (id, product_id, warehouse_id, quantity) VALUES
-                                                               (1001, 1, 101, 10), -- 悉尼仓库有 10 台 Laptop
-                                                               (1002, 2, 101, 50), -- 悉尼仓库有 50 个 Keyboard
+                               (1001, 1, 101, 10),
+                               (1002, 2, 101, 50),
+                               (1003, 1, 102, 5),
+                               (1004, 2, 102, 30),
+                               (1005, 3, 102, 100)
+ON CONFLICT (id) DO NOTHING;
 
--- 墨尔本仓库的库存
-                                                               (1003, 1, 102, 5),  -- 墨尔本仓库有 5 台 Laptop
-                                                               (1004, 2, 102, 30), -- 墨尔本仓库有 30 个 Keyboard
-                                                               (1005, 3, 102, 100);-- 墨尔本仓库有 100 个 Mouse
 
 -- 插入用户 (Users)
-INSERT INTO users (id, username, password) VALUES
-                                              (1, 'admin', 'password'),
-                                              (2, 'user', 'password');
+-- INSERT INTO users (id, username, password, role, address) VALUES
+--                                               (1, 'admin', 'password','ROLE_ADMIN','1 Admin Road, Sydney'),
+--                                               (2, 'user', 'password','ROLE_USER','100 User Ave, Melbourne'),
+--                                               (3, 'customer', 'password', 'ROLE_USER','500 Demo St, Sydney');
 
 -- 重置自增序列到当前最大ID，避免后续插入时主键冲突
 SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE((SELECT MAX(id) FROM products), 1), true);

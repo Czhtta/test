@@ -3,12 +3,16 @@ package com.comp5348.store.service.impl;
 import com.comp5348.store.entity.User;
 import com.comp5348.store.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -25,10 +29,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 );
 
         // 2. 将我们自己的 User 对象 转换为 Spring Security 的 UserDetails 对象
+        List<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority(user.getRole())
+        );
+
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-                .authorities(new ArrayList<>())
+                .authorities(authorities)
                 .build();
     }
 }

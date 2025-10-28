@@ -4,6 +4,8 @@ import com.comp5348.store.dto.CreateOrderRequest;
 import com.comp5348.store.dto.OrderDTO;
 import com.comp5348.store.entity.OrderStatus;
 import com.comp5348.store.service.OrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +18,7 @@ import java.util.List;
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "*")
 public class OrderController {
-
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
     @Autowired
     private OrderService orderService;
 
@@ -31,6 +33,7 @@ public class OrderController {
         } catch (Exception e) {
             System.err.println("Error creating order: " + e.getMessage());
             e.printStackTrace();
+            log.error("Failed to create order due to insufficient stock for Product ID [{}], requested quantity [{}].", request.getProductId(), request.getQuantity(), e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -94,8 +97,10 @@ public class OrderController {
      */
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<OrderDTO> cancelOrder(@PathVariable Long orderId) {
+        log.info("Received request to cancel Order ID [{}]", orderId);
         try {
             OrderDTO order = orderService.cancelOrder(orderId);
+            log.info("Order ID [{}] cancellation processed successfully.", orderId); // 记录处理成功
             return ResponseEntity.ok(order);
         } catch (Exception e) {
             System.err.println("Error canceling order: " + e.getMessage());

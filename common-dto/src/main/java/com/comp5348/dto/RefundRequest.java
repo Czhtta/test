@@ -8,5 +8,6 @@ import java.math.BigDecimal;
 public class RefundRequest implements Serializable {
     private Long orderId;
     private BigDecimal amount;
-    private String originalTransactionId;
+    private String originalTransactionId; //暂时没用到
+    private String customerBankAccountNumber;
 }

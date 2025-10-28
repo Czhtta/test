@@ -9,10 +9,10 @@ services:
     environment:
       POSTGRES_USER: comp5348        # 设置数据库用户名
       POSTGRES_PASSWORD: tut03gp04   # 设置数据库密码
-      POSTGRES_DB: store_db          # 创建名为store_db的数据库
     ports:
       - "5432:5432"                  # 将5432端口映射到容器的5432端口
     volumes:
+      - ./data/postgres-init:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data # 将数据库数据持久化，防止容器关闭后数据丢失
 
 
