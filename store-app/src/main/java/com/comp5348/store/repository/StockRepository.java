@@ -2,6 +2,8 @@ package com.comp5348.store.repository;
 
 import com.comp5348.store.entity.Stock;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,4 +18,7 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
      */
     List<Stock> findByProductIdAndQuantityGreaterThanOrderByQuantityDesc(Long productId, int quantity);
     Optional<Stock> findByWarehouseIdAndProductId(Long warehouseId, Long productId);
+
+    @Query("select coalesce(sum(s.quantity), 0) from Stock s where s.product.id = :productId")
+    Integer sumQuantityByProductId(@Param("productId") Long productId);
 }

@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // 允许任何人(permitAll)访问所有以 /api/auth/ 开头的URL
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         // message测试临时加一下
                         .requestMatchers("/api/test/**").permitAll()
                         // 除了上面放行的URL外，其他所有请求(anyRequest)都必须经过认证(authenticated)
