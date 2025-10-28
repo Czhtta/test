@@ -29,6 +29,6 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Order> orders;
 
-    @Column(name = "address") // <-- 【新增】
+    @Column(name = "address")
     private String address;
 }
