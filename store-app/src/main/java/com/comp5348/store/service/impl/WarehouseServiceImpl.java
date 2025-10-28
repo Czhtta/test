@@ -44,6 +44,7 @@ public class WarehouseServiceImpl implements WarehouseService {
             // 遍历了所有仓库后，仍然无法满足需求，表示库存不足
             // 抛出一个异常，gei上层调用者（OrderService）处理
             throw new InsufficientStockException("Insufficient stock for product ID: " + productId);
+            
         }
         return allocation;
     }

@@ -9,11 +9,11 @@ DELETE FROM warehouses;   -- 删除仓库表
 DELETE FROM users;        -- 删除用户表
 
 -- 插入商品 (Products)
--- 我们创建三种商品: 笔记本电脑, 键盘, 鼠标
-INSERT INTO products (id, name, description, price, active, created_at, updated_at) VALUES
-                                                       (1, 'Laptop', 'High-performance laptop', 1500.00, true, NOW(), NOW()),
-                                                       (2, 'Keyboard', 'Ergonomic mechanical keyboard', 120.00, true, NOW(), NOW()),
-                                                       (3, 'Mouse', 'Wireless gaming mouse', 80.00, true, NOW(), NOW());
+INSERT INTO products (id, name, description, price, active, created_at, updated_at, image_url,category) VALUES
+                                                       (1, 'Laptop', 'High-performance laptop', 1500.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/laptop.jpg', 'Electronics'),
+                                                       (2, 'Keyboard', 'Ergonomic mechanical keyboard', 120.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/keyboard.jpg', 'Electronics'),
+                                                       (3, 'Mouse', 'Wireless gaming mouse', 80.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/mouse.jpg', 'Electronics'),
+                                                       (4, 'Monitor', '24-inch full HD monitor', 200.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/monitor.jpg', 'Electronics');
 
 -- 插入仓库 (Warehouses)
 -- 我们创建两个仓库: 悉尼仓库和墨尔本仓库

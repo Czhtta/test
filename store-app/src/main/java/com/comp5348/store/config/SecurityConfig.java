@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // 允许任何人(permitAll)访问所有以 /api/auth/ 开头的URL
                         .requestMatchers("/api/auth/**").permitAll()
+
                         // 只有管理员可以访问 /api/admin/
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         // 只有管理员可以 C/U/D 商品
@@ -52,8 +53,11 @@ public class SecurityConfig {
                         // 订单API的精细控制
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/orders").hasAuthority("ROLE_ADMIN") // Admin看所有订单
                         .requestMatchers("/api/orders/**").hasAuthority("ROLE_USER") // 普通用户操作自己的订单
+           
+                        .requestMatchers("/uploads/**").permitAll()
+
                         // message测试临时加一下
-                        .requestMatchers("/api/test/**").permitAll()
+                        //  .requestMatchers("/api/test/**").permitAll()
                         // 除了上面放行的URL外，其他所有请求(anyRequest)都必须经过认证(authenticated)
                         .anyRequest().authenticated()
                 );

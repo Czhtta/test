@@ -16,4 +16,9 @@ public interface StockService {
      * @param quantityToUpdate 要增加的数量
      */
     void updateStockQuantity(Long warehouseId, Long productId, int quantityToUpdate);
+
+    /**
+     * 获取某商品的总库存（所有仓库之和）
+     */
+    int getTotalStockByProductId(Long productId);
 }

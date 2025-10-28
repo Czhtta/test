@@ -1,5 +1,6 @@
 package com.comp5348.store.service.impl;
 
+import com.comp5348.dto.DeliveryCancellationRequest;
 import com.comp5348.dto.EmailRequest;
 import com.comp5348.dto.PaymentRequest;
 import com.comp5348.dto.RefundRequest;
@@ -57,6 +58,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO createOrder(CreateOrderRequest request) {
+
         //  Check if user exists
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -66,11 +68,13 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + request.getProductId()));
 
         if (!product.getActive()) {
+            log.warn("Attempted to order inactive Product ID [{}]. Aborting order creation.", product.getId());
             throw new RuntimeException("Product is not active: " + product.getName());
         }
 
         // Check stock and allocate warehouse
         Map<Long, Integer> warehouseAllocation = warehouseService.findWarehousesForOrder(product.getId(), request.getQuantity());
+        log.info("Warehouse allocation found for Product ID [{}]: {}", product.getId(), warehouseAllocation);
 
         // Create order
         Order order = new Order();
@@ -107,9 +111,11 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
+
         PaymentRequest paymentRequest = new PaymentRequest();
         paymentRequest.setOrderId(savedOrder.getId());
         paymentRequest.setAmount(savedOrder.getTotalPrice());
+        paymentRequest.setCustomerBankAccountNumber(user.getBankAccountNumber());
 
         orderEventPublisher.sendPaymentRequest(paymentRequest);
 
@@ -164,30 +170,37 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO cancelOrder(Long orderId) {
+        log.info("Attempting to cancel Order ID [{}]", orderId);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         OrderStatus currentStatus = order.getOrderStatus();
-
+        log.info("Current status of Order ID [{}] is {}", orderId, currentStatus);
         if (currentStatus == OrderStatus.SHIPPED ||
             currentStatus == OrderStatus.IN_TRANSIT ||
             currentStatus == OrderStatus.DELIVERED ||
             currentStatus == OrderStatus.CANCELLED ||
             currentStatus == OrderStatus.REFUNDED) {
-
+            log.warn("Cannot cancel Order ID [{}] in status: {}", orderId, currentStatus);
             throw new RuntimeException("Cannot cancel order in status: " + currentStatus);
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
+        log.info("Order ID [{}] status set to CANCELLED.", orderId);
 
         boolean needsRefund = false;
         boolean needsStockRestore = false;
+        boolean needsDeliveryCancellation = false;
 
         if(currentStatus == OrderStatus.PAYMENT_SUCCESS || currentStatus == OrderStatus.AWAITING_SHIPMENT) {
             needsRefund = true;
             needsStockRestore = true;
-        } else if (currentStatus == OrderStatus.PENDING) {
+            needsDeliveryCancellation = true;
+        }
 
+        if(currentStatus == OrderStatus.PAYMENT_SUCCESS || currentStatus == OrderStatus.AWAITING_SHIPMENT) {
+            needsRefund = true;
+            needsStockRestore = true;
         }
 
         if(needsStockRestore){
@@ -206,16 +219,25 @@ public class OrderServiceImpl implements OrderService {
             RefundRequest refundRequest = new RefundRequest();
             refundRequest.setOrderId(order.getId());
             refundRequest.setAmount(order.getTotalPrice());
+            refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
             orderEventPublisher.sendRefundRequest(refundRequest);
         }
 
+        if (needsDeliveryCancellation) {
+            log.info("Sending delivery cancellation request for cancelled order ID [{}]", orderId);
+            DeliveryCancellationRequest cancellationRequest = new DeliveryCancellationRequest();
+            cancellationRequest.setOrderId(order.getId());
+            orderEventPublisher.sendDeliveryCancellationRequest(cancellationRequest);
+        }
+
         EmailRequest email = new EmailRequest();
-        email.setTo(order.getUser().getUsername() + "@example.com");
+        email.setTo(order.getUser().getEmail());
         email.setSubject("Order Cancelled: " + order.getId());
         email.setBody("Your order with ID " + order.getId() + " has been cancelled."
                         + (needsRefund ? " A refund will be processed shortly." : ""));
         orderEventPublisher.sendEmailRequest(email);
         Order savedOrder = orderRepository.save(order);
+        log.info("Cancellation process completed for Order ID [{}].", orderId); // 记录整个流程完成
         return convertToDTO(savedOrder);
     }
 

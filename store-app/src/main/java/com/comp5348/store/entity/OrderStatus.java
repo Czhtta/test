@@ -10,6 +10,5 @@ public enum OrderStatus {
     IN_TRANSIT,         // 运输中
     DELIVERED,          // 已送达
     CANCELLED,          // 已取消
-    REFUND_PROCESSING,  // 退款处理中
     REFUNDED            // 已退款
 }

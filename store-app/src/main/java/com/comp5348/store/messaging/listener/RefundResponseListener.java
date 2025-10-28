@@ -30,7 +30,7 @@ public class RefundResponseListener {
             log.error("Received refund result for unknown order ID: {}", response.getOrderId());
             return;
         }
-        String userEmail = order.getUser().getUsername() + "@example.com";
+        String userEmail = order.getUser().getEmail();
         String subject;
         String body;
 

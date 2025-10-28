@@ -19,6 +19,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link to="/" className="text-xl font-bold text-blue-600">
                 Store
               </Link>
+              {isAuthenticated && (
+                <Link
+                  to="/products"
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 rounded-md transition-colors"
+                >
+                  Products
+                </Link>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               {isAuthenticated ? (

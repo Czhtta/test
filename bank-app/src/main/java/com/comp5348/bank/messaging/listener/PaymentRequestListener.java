@@ -26,9 +26,9 @@ public class PaymentRequestListener {
     @Autowired
     private BankEventPublisher bankEventPublisher;
 
-    // 账户 ID 可以硬编码或从配置读取
-    private static final String CUSTOMER_ACCOUNT_NUMBER = "CUST1001"; // 假设的客户账号
-    private static final String STORE_ACCOUNT_NUMBER = "STORE5001";  // 假设的商店账号
+
+    // private static final String CUSTOMER_ACCOUNT_NUMBER = "CUST1001";
+    private static final String STORE_ACCOUNT_NUMBER = "STORE001";  // 假设的商店账号
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_PAYMENT_REQUEST)
     @Transactional
@@ -43,18 +43,15 @@ public class PaymentRequestListener {
 
             if (paymentAmount == null || orderIdLong == null) {
                 log.error("Received PaymentRequest with null amount or orderId for order {}", orderIdLong);
-
                 bankResult = new TransferResponse(null, "FAILED", "Invalid payment request data");
             } else {
-
                 TransferRequest bankTransferRequest = new TransferRequest();
-                bankTransferRequest.setFromAccount(CUSTOMER_ACCOUNT_NUMBER); // 付款方
+                bankTransferRequest.setFromAccount(request.getCustomerBankAccountNumber());// 付款方
                 bankTransferRequest.setToAccount(STORE_ACCOUNT_NUMBER);     // 收款方
                 bankTransferRequest.setAmount(paymentAmount);
                 bankTransferRequest.setOrderId(String.valueOf(orderIdLong));
                 bankTransferRequest.setDescription("Payment for order " + orderIdLong);
 
-                // --- 3. 调用 BankService 的 processPayment ---
                 bankResult = bankService.processPayment(bankTransferRequest);
             }
         } catch (Exception e) {

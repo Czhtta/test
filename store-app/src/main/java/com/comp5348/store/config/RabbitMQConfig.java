@@ -35,6 +35,8 @@ public class RabbitMQConfig {
     public static final String QUEUE_REFUND_RESPONSE = "q.refund.response";
     public static final String ROUTING_KEY_REFUND_RESPONSE = "refund.response";
 
+    public static final String QUEUE_DELIVERY_CANCELLATION = "q.delivery.cancellation";
+    public static final String ROUTING_KEY_DELIVERY_CANCELLATION = "delivery.cancellation";
 
     @Bean
     public MessageConverter jsonMessageConverter() {
@@ -93,5 +95,12 @@ public class RabbitMQConfig {
     @Bean
     public Binding bindingRefundResponseQueue(Queue refundResponseQueue, TopicExchange exchange) {
         return BindingBuilder.bind(refundResponseQueue).to(exchange).with(ROUTING_KEY_REFUND_RESPONSE);
+    }
+
+    @Bean
+    public Queue deliveryCancellationQueue() { return new Queue(QUEUE_DELIVERY_CANCELLATION); }
+    @Bean
+    public Binding bindingDeliveryCancellationQueue(Queue deliveryCancellationQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(deliveryCancellationQueue).to(exchange).with(ROUTING_KEY_DELIVERY_CANCELLATION);
     }
 }

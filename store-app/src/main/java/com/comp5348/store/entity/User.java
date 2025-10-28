@@ -29,6 +29,12 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Order> orders;
 
-    @Column(name = "address") // <-- 【新增】
+    @Column(name = "address")
     private String address;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "bank_account_number", unique = true)
+    private String bankAccountNumber;
 }

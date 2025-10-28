@@ -7,9 +7,7 @@ import com.comp5348.store.exception.InsufficientStockException;
 import com.comp5348.store.repository.ProductRepository;
 import com.comp5348.store.repository.StockRepository;
 import com.comp5348.store.repository.WarehouseRepository;
-import com.comp5348.store.service.ProductService;
 import com.comp5348.store.service.StockService;
-import com.comp5348.store.service.WarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,5 +108,11 @@ public class StockServiceImpl implements StockService {
             stock.setQuantity(stock.getQuantity() + quantityToIncrease);
             stockRepository.save(stock);
         }
+    }
+
+    @Override
+    public int getTotalStockByProductId(Long productId) {
+        Integer sum = stockRepository.sumQuantityByProductId(productId);
+        return sum == null ? 0 : sum;
     }
 }

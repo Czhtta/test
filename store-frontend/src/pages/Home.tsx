@@ -18,6 +18,16 @@ const Home: React.FC = () => {
           Login
         </Link>
       </div>
+      <br />
+      <div>
+        <Link
+          to="/products"
+          className="inline-block bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Products
+        </Link>
+      </div>
+      <br />
     </div>
   );
 };

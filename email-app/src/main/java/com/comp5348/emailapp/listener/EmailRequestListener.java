@@ -22,7 +22,7 @@ public class EmailRequestListener {
     public void  handleEmailRequest(EmailRequest emailRequest) {
         log.info(">>>> Received Email request: {}", emailRequest);
 
-        // 根据项目要求, 模拟邮件发送过程, 仅在控制台打印信息，后面有时间也许可以丰富
+        // 根据项目要求, 模拟邮件发送过程, 仅在控制台打印信息
         System.out.println("======================================================");
         System.out.println("Sending email...");
         System.out.println("To: " + emailRequest.getTo());
