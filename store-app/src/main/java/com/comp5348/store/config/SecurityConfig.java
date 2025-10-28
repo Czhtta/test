@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/orders").hasAuthority("ROLE_ADMIN") // Admin看所有订单
                         .requestMatchers("/api/orders/**").hasAuthority("ROLE_USER") // 普通用户操作自己的订单
                         // message测试临时加一下
-                        .requestMatchers("/api/test/**").permitAll()
+                        //  .requestMatchers("/api/test/**").permitAll()
                         // 除了上面放行的URL外，其他所有请求(anyRequest)都必须经过认证(authenticated)
                         .anyRequest().authenticated()
                 );

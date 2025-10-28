@@ -91,7 +91,7 @@ public class TestController {
     @GetMapping("/send-test-email")
     public Map<String, String> sendTestEmail(){
         EmailRequest testEmail = new EmailRequest();
-        testEmail.setTo("test@example.com");
+        testEmail.setTo("xxxxx");
         testEmail.setSubject("Hello World!");
         testEmail.setBody("This is a test message!");
 

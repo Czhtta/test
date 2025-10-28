@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 /**
  * 消费者，监听并处理 delivery-co-app 的配送状态更新。
  * 并将 JSON 反序列化为这里定义的dto对象：com.comp5348.dto.DeliveryStatusUpdate
@@ -31,6 +33,7 @@ public class DeliveryStatusListener {
     @Autowired
     private OrderEventPublisher orderEventPublisher;
 
+    @Transactional
     @RabbitListener(queues = RabbitMQConfig.QUEUE_DELIVERY_STATUS_UPDATE)
     public void handleDeliveryStatus(DeliveryStatusUpdate statusUpdate) {
         log.info(">>>> [STORE-APP] Received delivery status update for Order ID [{}]: {}",
@@ -43,7 +46,7 @@ public class DeliveryStatusListener {
             return;
         }
 
-        String userEmail = order.getUser().getUsername() + "@example.com"; // 假设用户名即为邮箱前缀
+        String userEmail = order.getUser().getEmail();
         String status = statusUpdate.getDeliveryStatus();
 
         switch (status){
@@ -80,6 +83,9 @@ public class DeliveryStatusListener {
                 refundRequest.setAmount(order.getTotalPrice());
 
                 // 项目要求中没有明确支付ID，可以先不设置 originalTransactionId，或让 bank-app 忽略它
+
+                // 从 order 获取 user 再获取 bankAccountNumber
+                refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
 
                 orderEventPublisher.sendRefundRequest(refundRequest);
                 break;

@@ -1,11 +1,15 @@
 package com.comp5348.store.controller;
 
+import com.comp5348.store.entity.User;
+import com.comp5348.store.repository.UserRepository;
 import com.comp5348.store.security.JwtProvider;
 import com.comp5348.store.service.UserService;
 import com.comp5348.store.dto.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -15,11 +19,15 @@ import java.util.Map;
 public class AuthController {
     private final JwtProvider jwtProvider;
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthController(UserService userService, JwtProvider jwtProvider) {
+    public AuthController(UserService userService, JwtProvider jwtProvider,UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.jwtProvider = jwtProvider;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @RequestMapping("/login")

@@ -26,9 +26,8 @@ public class RefundRequestListener {
     @Autowired
     private BankEventPublisher bankEventPublisher;
 
-    // 账户 ID 可以硬编码或从配置读取
-    private static final String CUSTOMER_ACCOUNT_NUMBER = "CUST1001"; // 收款方 (用户)
-    private static final String STORE_ACCOUNT_NUMBER = "STORE5001";  // 付款方 (商店)
+    // private static final String CUSTOMER_ACCOUNT_NUMBER = "CUST1001";
+    private static final String STORE_ACCOUNT_NUMBER = "STORE001";  // 付款方 (商店)
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_REFUND_REQUEST)
     @Transactional
@@ -36,10 +35,23 @@ public class RefundRequestListener {
         log.info(">>>> [BANK-APP] Received Refund Request for Order ID [{}], Amount: {}",
                 request.getOrderId(), request.getAmount());
 
+        if (request.getCustomerBankAccountNumber() == null || request.getCustomerBankAccountNumber().isEmpty()) {
+            log.error("Received RefundRequest for Order ID [{}] with missing or empty customerBankAccountNumber. Rejecting message.", request.getOrderId());
+            // 如果使用了手动ACK:
+            // try {
+            //      channel.basicReject(deliveryTag, false);
+            // }catch (IOException e) {
+            //       log.error("Failed to reject message", e);
+            // }
+            // 如果没用手动ACK，这里只能返回，但消息可能还会重试/循环
+            return; // 至少阻止了后续的错误
+        }
+
         TransferResponse bankResult;
         try {
             BigDecimal refundAmount = request.getAmount();
             Long orderIdLong = request.getOrderId();
+            String customerAccount = request.getCustomerBankAccountNumber();
 
             if (refundAmount == null || orderIdLong == null) {
                 log.error("Received RefundRequest with null amount or orderId for order {}", orderIdLong);
@@ -48,7 +60,7 @@ public class RefundRequestListener {
 
                 TransferRequest bankTransferRequest = new TransferRequest();
                 bankTransferRequest.setFromAccount(STORE_ACCOUNT_NUMBER);
-                bankTransferRequest.setToAccount(CUSTOMER_ACCOUNT_NUMBER);
+                bankTransferRequest.setToAccount(customerAccount);
                 bankTransferRequest.setAmount(refundAmount);
                 bankTransferRequest.setOrderId(String.valueOf(orderIdLong));
                 bankTransferRequest.setDescription("Refund for order " + orderIdLong);
