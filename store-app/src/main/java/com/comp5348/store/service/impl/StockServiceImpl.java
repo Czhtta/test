@@ -8,7 +8,10 @@ import com.comp5348.store.repository.ProductRepository;
 import com.comp5348.store.repository.StockRepository;
 import com.comp5348.store.repository.WarehouseRepository;
 import com.comp5348.store.service.StockService;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class StockServiceImpl implements StockService {
     private final StockRepository stockRepository;
     private final ProductRepository productRepository;
@@ -74,22 +78,21 @@ public class StockServiceImpl implements StockService {
                     .orElseThrow(() -> new RuntimeException(
                             "Stock not found for product ID: " + productId + " in warehouse ID: " + warehouseId));
 
-            // This is a pessimistic check
-            // In practice, reaching this point indicates that inventory has already been allocated previously.
-            // Should insufficient stock exist, `warehouseService.findWarehousesForOrder` would throw an exception
-            // However, testing revealed errors occurring due to concurrent orders causing overselling
-            // For instance: with only 5 units in stock, Order A allocates 5 units and Order B also allocates 5 units
-            // Both sequentially call warehouseService.findWarehousesForOrder, finding sufficient stock
-            // Order A completes payment first, then calls this method decreaseStock. After stock deduction, inventory becomes 0
-            // When order B subsequently pays successfully, attempting to deduct stock reveals insufficient inventory
-            // Hence, an additional inventory check is performed here to prevent overselling caused by concurrent orders
-            // However, transactions and locking have not been tested; optimisation can be pursued later
+
             if (stock.getQuantity() < quantityToDecrease) {
                 throw new InsufficientStockException("Insufficient stock in warehouse " + warehouseId + " for product " + productId);
             }
 
             stock.setQuantity(stock.getQuantity() - quantityToDecrease);
-            stockRepository.save(stock);
+            try {
+                stockRepository.save(stock);
+            } catch (OptimisticEntityLockException | ObjectOptimisticLockingFailureException e)  {
+                // 捕获乐观锁异常
+                log.warn("Optimistic locking failure while decreasing stock for product {} in warehouse {}: {}", productId, warehouseId, e.getMessage());
+                // 重新抛出，让调用者知道发生了并发冲突
+                throw new RuntimeException("Stock update conflict for product ID: " + productId + ", warehouse ID: " + warehouseId, e);
+                // 或者抛出一个自定义的业务异常，如 ConcurrentStockUpdateException
+            }
         }
     }
 
@@ -106,7 +109,15 @@ public class StockServiceImpl implements StockService {
                     .orElseThrow(() -> new RuntimeException(
                             "Stock not found for product ID: " + productId + " in warehouse ID: " + warehouseId));
             stock.setQuantity(stock.getQuantity() + quantityToIncrease);
-            stockRepository.save(stock);
+            try {
+                stockRepository.save(stock);
+            } catch (OptimisticEntityLockException | ObjectOptimisticLockingFailureException e)  {
+                // 捕获乐观锁异常
+                log.warn("Optimistic locking failure while increasing stock for product {} in warehouse {}: {}", productId, warehouseId, e.getMessage());
+                // 重新抛出，让调用者知道发生了并发冲突
+                throw new RuntimeException("Stock update conflict for product ID: " + productId + ", warehouse ID: " + warehouseId, e);
+                // 或者抛出一个自定义的业务异常，如 ConcurrentStockUpdateException
+            }
         }
     }
 

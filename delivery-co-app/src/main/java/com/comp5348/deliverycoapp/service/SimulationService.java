@@ -113,6 +113,6 @@ public class SimulationService {
         // 模拟 5% 的包裹丢失率
         private boolean packageBeLost() {
             // 生成一个 0-99 的随机数，如果小于5，则失败
-            return random.nextInt(100) < 70;
+            return random.nextInt(100) < 5;
         }
 }
