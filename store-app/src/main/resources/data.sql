@@ -15,22 +15,22 @@ INSERT INTO products (id, name, description, price, active, created_at, updated_
                                                        (2, 'Keyboard', 'Ergonomic mechanical keyboard', 120.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/keyboard.jpg', 'Electronics'),
                                                        (3, 'Mouse', 'Wireless gaming mouse', 80.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/mouse.jpg', 'Electronics'),
                                                        (4, 'Monitor', '24-inch full HD monitor', 200.00, true, NOW(), NOW(), 'http://localhost:8080/uploads/products/monitor.jpg', 'Electronics');
-ON CONFLICT (id) DO NOTHING;
+-- ON CONFLICT (id) DO NOTHING;
 
 -- 插入仓库 (Warehouses)
 INSERT INTO warehouses (id, name, location) VALUES
                                                (101, 'Sydney Warehouse', 'Sydney, NSW'),
-                                               (102, 'Melbourne Warehouse', 'Melbourne, VIC')
-ON CONFLICT (id) DO NOTHING;
+                                               (102, 'Melbourne Warehouse', 'Melbourne, VIC');
+-- ON CONFLICT (id) DO NOTHING;
 
 -- 插入库存信息 (Stock)
-INSERT INTO stocks (id, product_id, warehouse_id, quantity) VALUES
-                               (1001, 1, 101, 10),
-                               (1002, 2, 101, 50),
-                               (1003, 1, 102, 5),
-                               (1004, 2, 102, 30),
-                               (1005, 3, 102, 100)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO stocks (id, product_id, warehouse_id, quantity,version) VALUES
+                               (1001, 1, 101, 10,0),
+                               (1002, 2, 101, 50,0),
+                               (1003, 1, 102, 5,0),
+                               (1004, 2, 102, 30,0),
+                               (1005, 3, 102, 100,0);
+-- ON CONFLICT (id) DO NOTHING;
 
 
 -- 插入用户 (Users)

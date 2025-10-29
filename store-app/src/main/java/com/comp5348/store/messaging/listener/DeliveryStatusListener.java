@@ -82,8 +82,6 @@ public class DeliveryStatusListener {
                 refundRequest.setOrderId(order.getId());
                 refundRequest.setAmount(order.getTotalPrice());
 
-                // 项目要求中没有明确支付ID，可以先不设置 originalTransactionId，或让 bank-app 忽略它
-
                 // 从 order 获取 user 再获取 bankAccountNumber
                 refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
 

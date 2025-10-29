@@ -66,18 +66,8 @@ public class SimulationService {
         Long orderId = deliveryRequest.getOrderId();
         log.info("Order [{}]: Starting delivery simulation.", orderId);
 
-        try {// 将整个模拟过程放入 try-finally 确保标记被移除
-            // 模拟揽收前的检查
-            if (isOrderCancelled(orderId)) {
-                log.warn("Order [{}] was already cancelled before pickup simulation started. Aborting.", orderId);
-                return; // 直接退出
-            }
-            TimeUnit.SECONDS.sleep(10); // 模拟揽收时间
-            // 揽收后的检查（以防在sleep期间被取消）
-            if (isOrderCancelled(orderId)) {
-                log.warn("Order [{}] was cancelled during pickup simulation. Aborting.", orderId);
-                return;
-            }
+        try {
+            TimeUnit.SECONDS.sleep(5); // 模拟等待揽收时间
             if(packageBeLost()){
                 log.error("Order [{}]: Package LOST during pickup phase!", orderId);
                 statusPublisher.sendStatusUpdate(orderId, STATUS_LOST);
@@ -113,6 +103,6 @@ public class SimulationService {
         // 模拟 5% 的包裹丢失率
         private boolean packageBeLost() {
             // 生成一个 0-99 的随机数，如果小于5，则失败
-            return random.nextInt(100) < 70;
+            return random.nextInt(100) < 5;
         }
 }
