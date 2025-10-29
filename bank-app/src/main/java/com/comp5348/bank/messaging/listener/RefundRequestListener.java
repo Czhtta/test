@@ -37,14 +37,7 @@ public class RefundRequestListener {
 
         if (request.getCustomerBankAccountNumber() == null || request.getCustomerBankAccountNumber().isEmpty()) {
             log.error("Received RefundRequest for Order ID [{}] with missing or empty customerBankAccountNumber. Rejecting message.", request.getOrderId());
-            // 如果使用了手动ACK:
-            // try {
-            //      channel.basicReject(deliveryTag, false);
-            // }catch (IOException e) {
-            //       log.error("Failed to reject message", e);
-            // }
-            // 如果没用手动ACK，这里只能返回，但消息可能还会重试/循环
-            return; // 至少阻止了后续的错误
+            return;
         }
 
         TransferResponse bankResult;

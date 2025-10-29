@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+
 /**
  * 生产者
  * 使用 RabbitTemplate 来简化消息的发送，将 Java 对象（DTO）自动转换为 JSON 格式，
@@ -37,6 +40,11 @@ public class OrderEventPublisher {
     }
     public void sendPaymentRequest(PaymentRequest paymentRequest){
         log.info("Sending Payment request for order ID: {}",paymentRequest.getOrderId());
+        try {
+            TimeUnit.SECONDS.sleep(10);// 模拟延迟
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.EXCHANGE_NAME,
                 RabbitMQConfig.ROUTING_KEY_PAYMENT_REQUEST,

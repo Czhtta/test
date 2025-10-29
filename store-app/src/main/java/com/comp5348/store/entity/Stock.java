@@ -25,4 +25,7 @@ public class Stock {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Version
+    private int version;
 }
