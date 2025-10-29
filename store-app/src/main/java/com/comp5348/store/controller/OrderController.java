@@ -33,7 +33,6 @@ public class OrderController {
         } catch (Exception e) {
             System.err.println("Error creating order: " + e.getMessage());
             e.printStackTrace();
-            log.error("Failed to create order due to insufficient stock for Product ID [{}], requested quantity [{}].", request.getProductId(), request.getQuantity(), e);
             return ResponseEntity.badRequest().build();
         }
     }

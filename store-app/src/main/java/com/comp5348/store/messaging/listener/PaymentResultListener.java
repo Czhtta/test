@@ -88,8 +88,8 @@ public class PaymentResultListener {
 
                     try {
                         // 等待
-                        log.info("Waiting for 15 seconds to simulate processing sending delivery for Order ID [{}]...", order.getId());
-                        TimeUnit.SECONDS.sleep(15);
+                        log.info("Waiting for 20 seconds to simulate processing sending delivery for Order ID [{}]...", order.getId());
+                        TimeUnit.SECONDS.sleep(20);
                         log.info("Wait complete for Order ID [{}]", order.getId());
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
