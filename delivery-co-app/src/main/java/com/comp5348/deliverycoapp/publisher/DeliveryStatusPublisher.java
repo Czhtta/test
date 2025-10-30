@@ -3,6 +3,10 @@ package com.comp5348.deliverycoapp.publisher;
 import com.comp5348.dto.DeliveryStatusUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,6 +21,14 @@ import java.time.LocalDateTime;
 public class DeliveryStatusPublisher {
     public static final Logger log = LoggerFactory.getLogger(DeliveryStatusPublisher.class);
 
+    // 这个处理器会将任何消息的投递模式设置为 PERSISTENT (持久化)
+    private static final MessagePostProcessor PERSISTENT_MESSAGE_PROCESSOR = new MessagePostProcessor() {
+        @Override
+        public Message postProcessMessage(Message message) throws AmqpException {
+            message.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            return message;
+        }
+    };
     public static final String EXCHANGE_NAME = "comp5348.topic";
     public static final String ROUTING_KEY_DELIVERY_STATUS_UPDATE = "delivery.status.update";
 
@@ -32,6 +44,10 @@ public class DeliveryStatusPublisher {
         log.info("<<<<<< [DELIVERY-CO-APP] Sending delivery status update for Order ID [{}]: {}",
                 orderId, status);
 
-        rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY_DELIVERY_STATUS_UPDATE, statusUpdate);
+        rabbitTemplate.convertAndSend(
+                EXCHANGE_NAME,
+                ROUTING_KEY_DELIVERY_STATUS_UPDATE,
+                statusUpdate,
+                PERSISTENT_MESSAGE_PROCESSOR);
     }
 }

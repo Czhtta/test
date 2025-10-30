@@ -9,12 +9,17 @@ import com.comp5348.store.entity.OrderStatus;
 import com.comp5348.store.messaging.publisher.OrderEventPublisher;
 import com.comp5348.store.repository.OrderRepository;
 import com.comp5348.store.service.OrderService;
+import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
 
 /**
  * 消费者，监听并处理 delivery-co-app 的配送状态更新。
@@ -35,61 +40,71 @@ public class DeliveryStatusListener {
 
     @Transactional
     @RabbitListener(queues = RabbitMQConfig.QUEUE_DELIVERY_STATUS_UPDATE)
-    public void handleDeliveryStatus(DeliveryStatusUpdate statusUpdate) {
+    public void handleDeliveryStatus(DeliveryStatusUpdate statusUpdate,
+                                     Channel channel,
+                                     @Header(AmqpHeaders.DELIVERY_TAG) long tag
+    ) throws IOException {
         log.info(">>>> [STORE-APP] Received delivery status update for Order ID [{}]: {}",
                 statusUpdate.getOrderId(), statusUpdate.getDeliveryStatus());
 
-        Order order = orderRepository.findById(statusUpdate.getOrderId())
-                .orElse(null);
-        if(order == null){
-            log.error("Received delivery status for unknown order ID: {}", statusUpdate.getOrderId());
-            return;
-        }
+        try {
+            Order order = orderRepository.findById(statusUpdate.getOrderId())
+                    .orElse(null);
+            if(order == null){
+                log.error("Received delivery status for unknown order ID: {}", statusUpdate.getOrderId());
+                return;
+            }
 
-        String userEmail = order.getUser().getEmail();
-        String status = statusUpdate.getDeliveryStatus();
+            String userEmail = order.getUser().getEmail();
+            String status = statusUpdate.getDeliveryStatus();
 
-        switch (status){
-            case "PICKED_UP":
-                orderService.updateOrderStatus(order.getId(), OrderStatus.SHIPPED);
-                sendEmail(userEmail,
-                        "Your order has been picked up!",
-                        "Your order (ID" + order.getId() + " has been picked up and is on its way.");
-                break;
-            case "IN_TRANSIT":
-                orderService.updateOrderStatus(order.getId(), OrderStatus.IN_TRANSIT);
-                sendEmail(userEmail,
-                        "Your order is in transit!",
-                        "Your order (ID" + order.getId() + ") is currently in transit.");
-                break;
-            case "DELIVERED":
-                orderService.updateOrderStatus(order.getId(), OrderStatus.DELIVERED);
-                sendEmail(userEmail,
-                        "Your order has been delivered!",
-                        "Your order (ID" + order.getId() + ") has been successfully delivered.");
-                break;
-            case "LOST":
-                log.error("Package LOST for Order ID [{}]. Triggering refund.", order.getId());
-                // 1. 将订单标记为已取消或专门的状态
-                orderService.updateOrderStatus(order.getId(), OrderStatus.CANCELLED);
-                sendEmail(userEmail,
-                        "Problem with Your Order: " + order.getId(),
-                        "We are sorry, but your package for order "
-                                + order.getId()
-                                + " was lost in transit. The order has been cancelled and a full refund will be processed.");
+            switch (status){
+                case "PICKED_UP":
+                    orderService.updateOrderStatus(order.getId(), OrderStatus.SHIPPED);
+                    sendEmail(userEmail,
+                            "Your order has been picked up!",
+                            "Your order (ID" + order.getId() + " has been picked up and is on its way.");
+                    break;
+                case "IN_TRANSIT":
+                    orderService.updateOrderStatus(order.getId(), OrderStatus.IN_TRANSIT);
+                    sendEmail(userEmail,
+                            "Your order is in transit!",
+                            "Your order (ID" + order.getId() + ") is currently in transit.");
+                    break;
+                case "DELIVERED":
+                    orderService.updateOrderStatus(order.getId(), OrderStatus.DELIVERED);
+                    sendEmail(userEmail,
+                            "Your order has been delivered!",
+                            "Your order (ID" + order.getId() + ") has been successfully delivered.");
+                    break;
+                case "LOST":
+                    log.error("Package LOST for Order ID [{}]. Triggering refund.", order.getId());
+                    // 1. 将订单标记为已取消或专门的状态
+                    orderService.updateOrderStatus(order.getId(), OrderStatus.CANCELLED);
+                    sendEmail(userEmail,
+                            "Problem with Your Order: " + order.getId(),
+                            "We are sorry, but your package for order "
+                                    + order.getId()
+                                    + " was lost in transit. The order has been cancelled and a full refund will be processed.");
 
-                RefundRequest refundRequest = new RefundRequest();
-                refundRequest.setOrderId(order.getId());
-                refundRequest.setAmount(order.getTotalPrice());
+                    RefundRequest refundRequest = new RefundRequest();
+                    refundRequest.setOrderId(order.getId());
+                    refundRequest.setAmount(order.getTotalPrice());
 
-                // 从 order 获取 user 再获取 bankAccountNumber
-                refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
+                    // 从 order 获取 user 再获取 bankAccountNumber
+                    refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
 
-                orderEventPublisher.sendRefundRequest(refundRequest);
-                break;
+                    orderEventPublisher.sendRefundRequest(refundRequest);
+                    break;
 
-            default:
-                log.warn("Received unknown delivery status '{}' for Order ID [{}]", status, order.getId());
+                default:
+                    log.warn("Received unknown delivery status '{}' for Order ID [{}]", status, order.getId());
+            }
+            channel.basicAck(tag, false);
+        } catch (Exception e) {
+            log.error("Failed to process delivery status for Order ID [{}]. Nacking message.", statusUpdate.getOrderId(), e);
+            // 业务失败，手动拒绝
+            channel.basicNack(tag, false, false); // false = don't requeue
         }
     }
     private void sendEmail(String to, String subject, String body){
