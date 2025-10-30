@@ -4,10 +4,12 @@ import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import api from '../services/api';
 import { Product } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,7 +39,12 @@ const ProductDetail: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product) return;
+    if (!isAuthenticated) {
+      // 跳到登录页，并带上当前页地址（可选：回跳）
+      navigate('/login');
+      return;
+    }
+    if (!product || !user) return;
     if (!shippingAddress.trim()) {
       alert('Please enter shipping address');
       return;
@@ -49,11 +56,10 @@ const ProductDetail: React.FC = () => {
     try {
       setIsSubmitting(true);
       await orderService.createOrder({
-        userId: 1,
+        userId: user.id,
         productId: product.id,
         quantity,
-        shippingAddress: shippingAddress.trim(),
-        paymentMethod: 'credit_card',
+        deliveryAddress: shippingAddress.trim(), // 字段更名
       });
       alert('Order placed successfully!');
       navigate('/products');

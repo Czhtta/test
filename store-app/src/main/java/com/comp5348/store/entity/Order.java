@@ -41,4 +41,7 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems;
+
+    @Column(nullable = false, length = 255)
+    private String deliveryAddress;
 }

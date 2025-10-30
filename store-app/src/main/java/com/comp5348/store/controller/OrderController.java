@@ -3,6 +3,7 @@ package com.comp5348.store.controller;
 import com.comp5348.store.dto.CreateOrderRequest;
 import com.comp5348.store.dto.OrderDTO;
 import com.comp5348.store.entity.OrderStatus;
+import com.comp5348.store.entity.User;
 import com.comp5348.store.service.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import com.comp5348.store.service.UserService;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -21,12 +24,31 @@ public class OrderController {
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
     @Autowired
     private OrderService orderService;
+    @Autowired
+    private UserService userService;
 
     /**
      * Create an order
      */
     @PostMapping
-    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody CreateOrderRequest request, Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String username;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof org.springframework.security.core.userdetails.User) {
+            username = ((org.springframework.security.core.userdetails.User) principal).getUsername();
+        } else if (principal instanceof String) {
+            username = (String) principal;
+        } else {
+            return ResponseEntity.status(401).build();
+        }
+        User user = userService.findByUsername(username);
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        request.setUserId(user.getId());
         try {
             OrderDTO order = orderService.createOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(order);
@@ -64,6 +86,7 @@ public class OrderController {
      */
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
+        
         List<OrderDTO> orders = orderService.getAllOrders();
         return ResponseEntity.ok(orders);
     }

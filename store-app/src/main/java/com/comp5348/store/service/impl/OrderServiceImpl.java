@@ -88,6 +88,7 @@ public class OrderServiceImpl implements OrderService {
         OrderItem orderItemEntity = new OrderItem();
         orderItemEntity.setOrder(order);
         orderItemEntity.setProduct(product);
+        order.setDeliveryAddress(request.getDeliveryAddress());
         orderItemEntity.setQuantity(request.getQuantity());
 
         BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(orderItemEntity.getQuantity()));
@@ -253,6 +254,7 @@ public class OrderServiceImpl implements OrderService {
         dto.setOrderDate(order.getOrderDate());
         dto.setOrderStatus(order.getOrderStatus());
         dto.setTotalPrice(order.getTotalPrice());
+        dto.setDeliveryAddress(order.getDeliveryAddress());
 
         List<OrderDTO.OrderItemDTO> itemDTOs = new ArrayList<>();
         if (order.getOrderItems() != null) {
