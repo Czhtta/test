@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // 允许任何人(permitAll)访问所有以 /api/auth/ 开头的URL
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/me").authenticated()
 
                         // 只有管理员可以访问 /api/admin/
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
@@ -49,12 +50,17 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/products/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/products/**").hasAuthority("ROLE_ADMIN")
                         // 任何人都可以查看商品
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/api/products/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**").permitAll()
+                        //.requestMatchers("/api/products/**").permitAll()
+
                         // 订单API的精细控制
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/api/orders/**").permitAll() // 允许OPTIONS请求
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/orders").hasAuthority("ROLE_ADMIN") // Admin看所有订单
                         .requestMatchers("/api/orders/**").hasAuthority("ROLE_USER") // 普通用户操作自己的订单
            
                         .requestMatchers("/uploads/**").permitAll()
+                        
 
                         // message测试临时加一下
                         //  .requestMatchers("/api/test/**").permitAll()

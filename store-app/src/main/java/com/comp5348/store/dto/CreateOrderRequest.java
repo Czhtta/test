@@ -15,4 +15,7 @@ public class CreateOrderRequest {
     
     @NotNull(message = "Quantity is required")
     private Integer quantity;
+
+    @NotNull(message = "Delivery address is required")
+    private String deliveryAddress;
 }

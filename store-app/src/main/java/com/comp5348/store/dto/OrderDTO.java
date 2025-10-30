@@ -15,6 +15,7 @@ public class OrderDTO {
     private LocalDateTime orderDate;
     private OrderStatus orderStatus;
     private BigDecimal totalPrice;
+    private String deliveryAddress;
     private List<OrderWarehouseAllocationDTO> warehouseAllocations;
     private List<OrderItemDTO> orderItems;
     
