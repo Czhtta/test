@@ -88,6 +88,7 @@ public class OrderServiceImpl implements OrderService {
         OrderItem orderItemEntity = new OrderItem();
         orderItemEntity.setOrder(order);
         orderItemEntity.setProduct(product);
+        order.setDeliveryAddress(request.getDeliveryAddress());
         orderItemEntity.setQuantity(request.getQuantity());
 
         BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(orderItemEntity.getQuantity()));
@@ -168,77 +169,123 @@ public class OrderServiceImpl implements OrderService {
         return convertToDTO(savedOrder);
     }
 
+    /**
+     * Cancels an order using atomic state transitions to prevent race conditions.
+     * This method tries to update the order status directly in the database based on
+     * its *current* state, ensuring that only one cancellation or processing flow
+     * can succeed.
+     */
     @Override
     public OrderDTO cancelOrder(Long orderId) {
-        log.info("Attempting to cancel Order ID [{}]", orderId);
+        log.info("Attempting to cancel Order ID [{}] using atomic update.", orderId);
+
+        // 1. Try to cancel from PENDING
+        // This is an unpaid order. No refund or stock restore needed.
+        int rowsUpdated = orderRepository.updateStatusIfCurrentStatusIs(
+                orderId, OrderStatus.CANCELLED, OrderStatus.PENDING);
+
+        if (rowsUpdated > 0) {
+            log.info("Order ID [{}] successfully cancelled from PENDING status.", orderId);
+            Order order = orderRepository.findById(orderId).orElseThrow(); // Re-fetch to get data for email
+            sendEmail(order.getUser().getEmail(),
+                    "Order Cancelled: " + orderId,
+                    "Your order with ID " + orderId + " has been successfully cancelled.");
+            return convertToDTO(order);
+        }
+
+        // 2. Try to cancel from PAYMENT_SUCCESS
+        // This order is paid, but not yet sent to delivery.
+        // Requires stock restore and refund.
+        rowsUpdated = orderRepository.updateStatusIfCurrentStatusIs(
+                orderId, OrderStatus.CANCELLED, OrderStatus.PAYMENT_SUCCESS);
+
+        if (rowsUpdated > 0) {
+            log.info("Order ID [{}] successfully cancelled from PAYMENT_SUCCESS. Restoring stock and issuing refund.", orderId);
+            Order order = orderRepository.findById(orderId).orElseThrow();
+
+            restoreStock(order);
+            sendRefund(order);
+
+            sendEmail(order.getUser().getEmail(),
+                    "Order Cancelled: " + orderId,
+                    "Your order with ID " + orderId + " has been cancelled. A refund will be processed shortly.");
+            return convertToDTO(order);
+        }
+
+        // 3. Try to cancel from AWAITING_SHIPMENT
+        // This order is paid AND has been processed for delivery.
+        // Requires stock restore, refund, AND delivery cancellation.
+        rowsUpdated = orderRepository.updateStatusIfCurrentStatusIs(
+                orderId, OrderStatus.CANCELLED, OrderStatus.AWAITING_SHIPMENT);
+
+        if (rowsUpdated > 0) {
+            log.info("Order ID [{}] successfully cancelled from AWAITING_SHIPMENT. Restoring stock, issuing refund, and sending delivery cancellation.", orderId);
+            Order order = orderRepository.findById(orderId).orElseThrow();
+
+            restoreStock(order);
+            sendRefund(order);
+            sendDeliveryCancellation(order);
+
+            sendEmail(order.getUser().getEmail(),
+                    "Order Cancelled: " + orderId,
+                    "Your order with ID " + orderId + " has been cancelled. A refund will be processed, and we will attempt to stop the shipment.");
+            return convertToDTO(order);
+        }
+
+        // 4. If all updates failed, the order is in a non-cancellable state (or already cancelled)
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
 
-        OrderStatus currentStatus = order.getOrderStatus();
-        log.info("Current status of Order ID [{}] is {}", orderId, currentStatus);
-        if (currentStatus == OrderStatus.SHIPPED ||
-            currentStatus == OrderStatus.IN_TRANSIT ||
-            currentStatus == OrderStatus.DELIVERED ||
-            currentStatus == OrderStatus.CANCELLED ||
-            currentStatus == OrderStatus.REFUNDED) {
-            log.warn("Cannot cancel Order ID [{}] in status: {}", orderId, currentStatus);
-            throw new RuntimeException("Cannot cancel order in status: " + currentStatus);
+        log.warn("Failed to cancel Order ID [{}]. It is already in a final (or non-cancellable) state: {}", orderId, order.getOrderStatus());
+
+        // Check if it's already cancelled
+        if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.REFUNDED) {
+            return convertToDTO(order); // Return current state; it's already done.
         }
 
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        log.info("Order ID [{}] status set to CANCELLED.", orderId);
+        // Otherwise, it's SHIPPED, IN_TRANSIT, DELIVERED, etc.
+        throw new RuntimeException("Cannot cancel order in status: " + order.getOrderStatus());
+    }
 
-        boolean needsRefund = false;
-        boolean needsStockRestore = false;
-        boolean needsDeliveryCancellation = false;
 
-        if(currentStatus == OrderStatus.PAYMENT_SUCCESS || currentStatus == OrderStatus.AWAITING_SHIPMENT) {
-            needsRefund = true;
-            needsStockRestore = true;
-            needsDeliveryCancellation = true;
-        }
+    private void restoreStock(Order order) {
+        log.info("Restoring stock for cancelled order ID [{}]", order.getId());
+        Map<Long, Integer> stockToRestore = order.getWarehouseAllocations().stream()
+                .collect(Collectors.toMap(
+                        allocation -> allocation.getWarehouse().getId(),
+                        OrderWarehouseAllocation::getAllocatedQuantity
+                ));
+        // Assumes single-item order based on CreateOrderRequest DTO.
+        // If orders can have multiple items, this logic must be expanded.
+        Long productId = order.getOrderItems().get(0).getProduct().getId();
+        stockService.increaseStock(stockToRestore, productId);
+    }
 
-        if(currentStatus == OrderStatus.PAYMENT_SUCCESS || currentStatus == OrderStatus.AWAITING_SHIPMENT) {
-            needsRefund = true;
-            needsStockRestore = true;
-        }
 
-        if(needsStockRestore){
-            log.info("Restoring stock for cancelled order ID [{}]", orderId);
-            Map<Long, Integer> stockToRestore = order.getWarehouseAllocations().stream()
-                    .collect(Collectors.toMap(
-                            allocation -> allocation.getWarehouse().getId(),
-                            OrderWarehouseAllocation::getAllocatedQuantity
-                    ));
-            Long productId = order.getOrderItems().get(0).getProduct().getId();
-            stockService.increaseStock(stockToRestore, productId);
-        }
+    private void sendRefund(Order order) {
+        log.info("Sending refund request for cancelled order ID [{}]", order.getId());
+        RefundRequest refundRequest = new RefundRequest();
+        refundRequest.setOrderId(order.getId());
+        refundRequest.setAmount(order.getTotalPrice());
+        refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
+        orderEventPublisher.sendRefundRequest(refundRequest);
+    }
 
-        if(needsRefund){
-            log.info("Sending refund request for cancelled order ID [{}]", orderId);
-            RefundRequest refundRequest = new RefundRequest();
-            refundRequest.setOrderId(order.getId());
-            refundRequest.setAmount(order.getTotalPrice());
-            refundRequest.setCustomerBankAccountNumber(order.getUser().getBankAccountNumber());
-            orderEventPublisher.sendRefundRequest(refundRequest);
-        }
 
-        if (needsDeliveryCancellation) {
-            log.info("Sending delivery cancellation request for cancelled order ID [{}]", orderId);
-            DeliveryCancellationRequest cancellationRequest = new DeliveryCancellationRequest();
-            cancellationRequest.setOrderId(order.getId());
-            orderEventPublisher.sendDeliveryCancellationRequest(cancellationRequest);
-        }
+    private void sendDeliveryCancellation(Order order) {
+        log.info("Sending delivery cancellation request for cancelled order ID [{}]", order.getId());
+        DeliveryCancellationRequest cancellationRequest = new DeliveryCancellationRequest();
+        cancellationRequest.setOrderId(order.getId());
+        orderEventPublisher.sendDeliveryCancellationRequest(cancellationRequest);
+    }
 
+
+    private void sendEmail(String to, String subject, String body){
         EmailRequest email = new EmailRequest();
-        email.setTo(order.getUser().getEmail());
-        email.setSubject("Order Cancelled: " + order.getId());
-        email.setBody("Your order with ID " + order.getId() + " has been cancelled."
-                        + (needsRefund ? " A refund will be processed shortly." : ""));
+        email.setTo(to);
+        email.setSubject(subject);
+        email.setBody(body);
         orderEventPublisher.sendEmailRequest(email);
-        Order savedOrder = orderRepository.save(order);
-        log.info("Cancellation process completed for Order ID [{}].", orderId); // 记录整个流程完成
-        return convertToDTO(savedOrder);
     }
 
 
@@ -253,6 +300,7 @@ public class OrderServiceImpl implements OrderService {
         dto.setOrderDate(order.getOrderDate());
         dto.setOrderStatus(order.getOrderStatus());
         dto.setTotalPrice(order.getTotalPrice());
+        dto.setDeliveryAddress(order.getDeliveryAddress());
 
         List<OrderDTO.OrderItemDTO> itemDTOs = new ArrayList<>();
         if (order.getOrderItems() != null) {

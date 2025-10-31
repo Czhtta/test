@@ -78,18 +78,6 @@ public class OrderProcessingServiceImpl implements OrderProcessingService {
                 // 尝试扣减库存 (包含乐观锁检查)
                 stockService.decreaseStock(warehouseAllocation, productId);
 
-                try {
-                    // 等待
-                    log.info("Waiting for 20 seconds to simulate processing sending delivery for Order ID [{}]...", order.getId());
-                    TimeUnit.SECONDS.sleep(20);
-                    log.info("Wait complete for Order ID [{}]", order.getId());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("Wait interrupted after stock decrease for Order ID [{}].", order.getId());
-                    // 必须抛出异常以触发事务回滚
-                    throw new RuntimeException("Wait interrupted, rolling back", e);
-                }
-
                 //  原子性地尝试将状态从 PAYMENT_SUCCESS 更新到 AWAITING_SHIPMENT
                 int finalUpdateRows = 0;
                 try {

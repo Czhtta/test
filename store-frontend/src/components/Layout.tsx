@@ -29,6 +29,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
             </div>
             <div className="flex items-center space-x-4">
+              {isAuthenticated && (
+                <Link
+                  to="/orders"
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 rounded-md transition-colors"
+                >
+                  Orders
+                </Link>
+              )}
               {isAuthenticated ? (
                 <button
                   onClick={logout}
@@ -58,7 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-gray-500 text-sm">
-            © 2024 Store Application. All rights reserved.
+            © 2025 COMP5348 Store Application. All rights reserved.
           </p>
         </div>
       </footer>

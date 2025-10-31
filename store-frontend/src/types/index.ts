@@ -34,7 +34,10 @@ export interface stock {
 export enum OrderStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
+  AWAITING_SHIPMENT = 'AWAITING_SHIPMENT',
   SHIPPED = 'SHIPPED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  REFUNDED = 'REFUNDED',
   DELIVERED = 'DELIVERED',
   CANCELLED = 'CANCELLED'
 }
@@ -50,19 +53,34 @@ export interface CreateOrderRequest {
   userId: number;
   productId: number;
   quantity: number;
-  shippingAddress: string;
-  paymentMethod: string;
+  deliveryAddress: string;
+}
+
+export interface OrderWarehouseAllocationDTO {
+  id: number;
+  warehouseId: number;
+  warehouseName: string;
+  allocatedQuantity: number;
+}
+
+export interface OrderItemDTO {
+  id: number;
+  productId: number;
+  productName: string;
+  productPrice: number;
+  quantity: number;
+  subtotal: number;
 }
 
 export interface Order {
   id: number;
   userId: number;
-  status: OrderStatus;
-  totalAmount: number;
-  shippingAddress: string;
-  paymentMethod: string;
-  items: OrderItem[];
-  createdAt: string;
-  updatedAt: string;
+  username: string;
+  orderDate: string;
+  orderStatus: string;
+  totalPrice: number;
+  deliveryAddress: string;
+  warehouseAllocations?: OrderWarehouseAllocationDTO[];
+  orderItems?: OrderItemDTO[];
 }
 

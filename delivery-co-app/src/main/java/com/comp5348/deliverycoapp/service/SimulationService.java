@@ -66,8 +66,21 @@ public class SimulationService {
         Long orderId = deliveryRequest.getOrderId();
         log.info("Order [{}]: Starting delivery simulation.", orderId);
 
+
         try {
-            TimeUnit.SECONDS.sleep(5); // 模拟等待揽收时间
+            // 揽收前的检查
+            if (isOrderCancelled(orderId)) {
+                log.warn("Order [{}] was already cancelled before pickup simulation started. Aborting.", orderId);
+                return; // 直接退出
+            }
+            TimeUnit.SECONDS.sleep(10);
+
+            // 揽收后的检查（以防在sleep期间被取消）
+            if (isOrderCancelled(orderId)) {
+                log.warn("Order [{}] was cancelled during pickup simulation. Aborting.", orderId);
+                return;
+            }
+
             if(packageBeLost()){
                 log.error("Order [{}]: Package LOST during pickup phase!", orderId);
                 statusPublisher.sendStatusUpdate(orderId, STATUS_LOST);
