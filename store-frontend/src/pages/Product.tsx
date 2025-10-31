@@ -77,77 +77,137 @@ const Products: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 via-white to-white">
+        <div className="text-xl text-gray-700">Loading products…</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Products</h1>
-      </div>
-
-      {error && <div className="mb-4 text-red-600">{error}</div>}
-
-      {/* Search and Filter */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All Categories</option>
-          {categories.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </div>
-
-
-      {/* Products Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <div
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow max-w-[260px] mx-auto"
-            >
-              {product.imageUrl ? ( 
-                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover p-2" />
-              ) : (
-                <span className="text-gray-400">No Image</span>
-              )}
-            </div>
-            <div className="p-4">
-              <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-              <p className="text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-              <p className="text-lg font-bold text-blue-600 mb-2">${product.price.toFixed(2)}</p>
-              <button
-                onClick={() => handleProductDetail(product.id)}
-                className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-              >
-                Product Detail
-              </button>
-            </div>
+    <div className="bg-gradient-to-b from-blue-50/40 via-white to-white">
+      {/* Header / Hero */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+              Explore Products
+            </h1>
+            <p className="text-gray-600 mt-2">Find your next favorite item from our curated list.</p>
           </div>
-        ))}
+        </div>
       </div>
 
-      {filteredProducts.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-xl">No products found</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {error && <div className="mb-4 text-red-600">{error}</div>}
+
+        {/* Search and Filter */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="w-full pl-4 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+              />
+            </div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category chips */}
+          {categories.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                All
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+            >
+              <div className="relative">
+                <div className="aspect-square bg-white">
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-contain p-4"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                      No Image
+                    </div>
+                  )}
+                </div>
+                <div className="absolute top-3 left-3">
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-600 text-white shadow">
+                    {product.category}
+                  </span>
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
+                  {product.name}
+                </h3>
+                <p className="text-gray-600 text-sm mt-1 mb-3 line-clamp-2">{product.description}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-lg font-bold text-blue-700">${product.price.toFixed(2)}</p>
+                  <button
+                    onClick={() => handleProductDetail(product.id)}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products found</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

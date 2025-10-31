@@ -10,6 +10,9 @@ const STATUS_COLORS: Record<string, string> = {
   SHIPPED: 'bg-purple-100 text-purple-800',
   DELIVERED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-gray-200 text-gray-700',
+  AWAITING_SHIPMENT: 'bg-orange-100 text-orange-800',
+  IN_TRANSIT: 'bg-cyan-100 text-cyan-800',
+  REFUNDED: 'bg-gray-100 text-gray-500',
 };
 
 const NON_CANCELLABLE = new Set<string>(['CANCELLED', 'DELIVERED', 'SHIPPED', 'IN_TRANSIT', 'REFUNDED']);
